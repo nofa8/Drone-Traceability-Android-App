@@ -78,11 +78,12 @@ fun DroneMapScreen(navController: NavController, droneId: Long) {
     // Recenter helper
     val recenterCamera: (LatLng, Float) -> Unit = { target, zoom ->
         scope.launch {
+            userHasMovedCamera = false // reset after programmatic recenter
             cameraPositionState.animate(
                 update = CameraUpdateFactory.newLatLngZoom(target, zoom),
                 durationMs = 800
             )
-            userMovedMap = false // reset after programmatic recenter
+
         }
     }
     LaunchedEffect(Unit) {
