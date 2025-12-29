@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 class DroneRepository {
+
     fun getDrones(): Flow<List<Drone>> = flow {
         val longid = 1L
         while (true) {
