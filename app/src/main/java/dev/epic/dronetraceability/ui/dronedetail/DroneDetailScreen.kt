@@ -68,7 +68,6 @@ fun DroneDetailScreen(
                 drone != null -> {
                     DroneDetails(
                         drone = drone!!,
-                        padding = padding,
                         navController = navController
                     )
                 }
