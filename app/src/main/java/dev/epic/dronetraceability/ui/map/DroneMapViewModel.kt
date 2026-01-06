@@ -1,39 +1,26 @@
 package dev.epic.dronetraceability.ui.map
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
-import dev.epic.dronetraceability.data.model.Drone
-import dev.epic.dronetraceability.data.repository.DroneRepository
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
+import dev.epic.dronetraceability.data.model.domain.Telemetry
+import dev.epic.dronetraceability.data.repository.DroneRepository
+import kotlinx.coroutines.flow.*
 
 class DroneMapViewModel(
-    private val droneId: Long,
-    private val repo: DroneRepository = DroneRepository()
+    private val droneId: String,
+    private val repo: DroneRepository
 ) : ViewModel() {
 
-    private val _drone = MutableStateFlow<Drone?>(null)
-    val drone: StateFlow<Drone?> = _drone
+    val telemetry: StateFlow<Telemetry?> = repo.drones
+        .map { drones -> drones[droneId]?.telemetry }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
 
-    init {
-        viewModelScope.launch {
-            repo.getDrones().collect { drones ->
-                _drone.value = drones.find { it.id == droneId }
-            }
-        }
-    }
-}
+    val isLoading: StateFlow<Boolean> = repo.isLoading
 
-class DroneMapViewModelFactory(
-    private val droneId: Long
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(DroneMapViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return DroneMapViewModel(droneId) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
+    val error: StateFlow<String?> = repo.error
 }

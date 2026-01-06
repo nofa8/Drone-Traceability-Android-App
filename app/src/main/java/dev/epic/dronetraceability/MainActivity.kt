@@ -31,9 +31,9 @@ class MainActivity : ComponentActivity() {
 sealed class DroneScreen(val route: String) {
     object Dashboard : DroneScreen("dashboard")
     object Detail : DroneScreen("droneDetail/{droneId}") {
-        fun createRoute(droneId: Long) = "droneDetail/$droneId"
+        fun createRoute(droneId: String) = "droneDetail/$droneId"
     }
     object Map : DroneScreen("droneMap/{droneId}") {
-        fun createRoute(droneId: Long) = "droneMap/$droneId"
+        fun createRoute(droneId: String) = "droneMap/$droneId"
     }
 }

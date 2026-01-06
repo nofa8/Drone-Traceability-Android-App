@@ -20,17 +20,22 @@ fun AppNavHost(navController: NavHostController) {
         composable("dashboard") {
             DashboardScreen(navController)
         }
-        composable("droneDetail/{droneId}", arguments = listOf(navArgument("droneId") {type = NavType.LongType})) { backStackEntry ->
-            val droneId = backStackEntry.arguments?.getLong("droneId") ?: 0L
+        composable(
+            "droneDetail/{droneId}",
+            arguments = listOf(navArgument("droneId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val droneId = backStackEntry.arguments?.getString("droneId")!!
             DroneDetailScreen(navController, droneId)
         }
+
         composable(
             route = "droneMap/{droneId}",
-            arguments = listOf(navArgument("droneId") { type = NavType.LongType })
+            arguments = listOf(navArgument("droneId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val droneId = backStackEntry.arguments?.getLong("droneId") ?: 0
+            val droneId = backStackEntry.arguments?.getString("droneId") ?: ""
             DroneMapScreen(navController, droneId)
         }
+
 
 
     }

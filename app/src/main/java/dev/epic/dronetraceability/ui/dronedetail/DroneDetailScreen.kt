@@ -5,37 +5,82 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.epic.dronetraceability.navigation.RepositoryProvider
 import dev.epic.dronetraceability.ui.components.DroneDetails
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DroneDetailScreen(navController: NavController, droneId: Long) {
-    val viewModel: DroneDetailViewModel = viewModel(
-        factory = DroneDetailViewModelFactory(droneId)
+fun DroneDetailScreen(
+    navController: NavController,
+    droneId: String,
+    viewModel: DroneDetailViewModel = viewModel(
+        factory = DroneDetailViewModelFactory(droneId, RepositoryProvider.droneRepository)
     )
-
+) {
     val drone by viewModel.drone.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(drone?.model ?: "Drone Details") },
+            TopAppBar(
+                title = {
+                    Text(
+                        drone?.model ?: "Drone $droneId"
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = navController::popBackStack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
-                })
+                }
+            )
         }
     ) { padding ->
-        drone?.let {
-            DroneDetails(drone!!, padding, navController )
-        } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            when {
+                error != null -> {
+                    Text(
+                        text = "Erro: $error",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                drone == null && isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                drone != null -> {
+                    DroneDetails(
+                        drone = drone!!,
+                        padding = padding,
+                        navController = navController
+                    )
+                }
+
+                else -> {
+                    Text(
+                        text = "Drone não disponível",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
         }
     }
 }
-
 

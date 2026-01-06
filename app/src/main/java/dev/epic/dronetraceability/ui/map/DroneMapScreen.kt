@@ -1,6 +1,5 @@
 package dev.epic.dronetraceability.ui.map
 
-
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationSearching
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -24,120 +24,148 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
-import dev.epic.dronetraceability.ui.dronedetail.DroneDetailViewModel
-import dev.epic.dronetraceability.ui.dronedetail.DroneDetailViewModelFactory
 import kotlinx.coroutines.launch
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.CameraUpdateFactory
+import dev.epic.dronetraceability.navigation.RepositoryProvider
 import dev.epic.dronetraceability.ui.components.CustomZoomControls
-import dev.epic.dronetraceability.ui.components.DroneStatusCard
+import dev.epic.dronetraceability.ui.components.DroneStatusCardMap
 import dev.epic.dronetraceability.ui.components.MapTypeSelector
 import dev.epic.dronetraceability.ui.components.batteryMarker
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DroneMapScreen(navController: NavController, droneId: Long) {
-    val viewModel: DroneDetailViewModel = viewModel(factory = DroneDetailViewModelFactory(droneId))
-    val drone by viewModel.drone.collectAsState()
+fun DroneMapScreen(
+    navController: NavController,
+    droneId: String,
+    viewModel: DroneMapViewModel = viewModel(
+        factory = DroneMapViewModelFactory(droneId, RepositoryProvider.droneRepository)
+    )
+) {
+    val telemetry by viewModel.telemetry.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
     val scope = rememberCoroutineScope()
-    //val context = LocalContext.current
+
     var userHasMovedCamera by remember { mutableStateOf(false) }
-    // Map type state
     var mapType by remember { mutableStateOf(MapType.HYBRID) }
-    // camera state with safe default - not recreated on recomposition
+
     val defaultLocation = remember { LatLng(39.93326, -8.89305) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 14f)
     }
 
-    // Track map readiness and user interaction
     var mapLoaded by remember { mutableStateOf(false) }
-    var userMovedMap by remember { mutableStateOf(false) }
 
-
-
-    // Auto-center effect: only when map is loaded and user hasn't moved map
-    LaunchedEffect(drone?.lat, drone?.lng, mapLoaded, userMovedMap) {
-        if (!mapLoaded) return@LaunchedEffect
-        val d = drone ?: return@LaunchedEffect
-        if (userMovedMap) return@LaunchedEffect
-
-        val target = LatLng(d.lat, d.lng)
-        if (userHasMovedCamera) {
-            return@LaunchedEffect
+    // Auto-center
+    LaunchedEffect(telemetry, mapLoaded) {
+        if (!mapLoaded || userHasMovedCamera) return@LaunchedEffect
+        telemetry?.let {
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLng(LatLng(it.latitude, it.longitude)),
+                durationMs = 700
+            )
         }
-        cameraPositionState.animate(
-            update = CameraUpdateFactory.newLatLng(target),
-            durationMs = 700
-        )
     }
 
-    // Recenter helper
+    // Detect user gesture
+    LaunchedEffect(Unit) {
+        snapshotFlow { cameraPositionState.isMoving }
+            .collect { moving ->
+                if (
+                    moving &&
+                    cameraPositionState.cameraMoveStartedReason == CameraMoveStartedReason.GESTURE
+                ) {
+                    userHasMovedCamera = true
+                }
+            }
+    }
+
     val recenterCamera: (LatLng, Float) -> Unit = { target, zoom ->
         scope.launch {
-            userHasMovedCamera = false // reset after programmatic recenter
+            userHasMovedCamera = false
             cameraPositionState.animate(
                 update = CameraUpdateFactory.newLatLngZoom(target, zoom),
                 durationMs = 800
             )
-
-        }
-    }
-    LaunchedEffect(Unit) {
-        snapshotFlow { cameraPositionState.position.target }.collect {
-            // Once the camera target changes via a gesture, set the flag.
-            if (cameraPositionState.isMoving && cameraPositionState.cameraMoveStartedReason == CameraMoveStartedReason.GESTURE) {
-                userHasMovedCamera = true
-            }
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(drone?.model ?: "Live Map") },
+                title = { Text("Drone $droneId") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = navController::popBackStack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(mapType = mapType),
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    compassEnabled = true,
-                    mapToolbarEnabled = false
-                ),
-                onMapLoaded = { mapLoaded = true }
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
 
-            ) {
-                drone?.let { d ->
-                    val dronePos = LatLng(d.lat, d.lng)
-
-                    val icon = remember(d.batLvl) { batteryMarker(d.batLvl) }
-
-                    Marker(
-                        state = rememberUpdatedMarkerState(position = dronePos),
-                        title = d.model,
-                        snippet = "Altitude: ${"%.1f".format(d.alt)} m • Battery: ${d.batLvl}%",
-                        icon = icon
+            when {
+                error != null -> {
+                    Text(
+                        text = "Erro: $error",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.error
                     )
-
-                    // Draw polyline for trajectory here if you have points
-                    // Polyline(points = ...)
+                }
+                isLoading && telemetry == null -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
             }
 
-            // Map type picker
+            // Google Map
+            telemetry?.let { t ->
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    properties = MapProperties(mapType = mapType),
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = false,
+                        compassEnabled = true,
+                        mapToolbarEnabled = false
+                    ),
+                    onMapLoaded = { mapLoaded = true }
+                ) {
+                    val dronePos = LatLng(t.latitude, t.longitude)
+                    val icon = remember(t.batteryLevel) { batteryMarker(t.batteryLevel) }
+
+                    Marker(
+                        state = rememberUpdatedMarkerState(position = dronePos),
+                        title = "Drone $droneId",
+                        snippet = "Altitude: ${"%.1f".format(t.altitude)} m • Battery: ${t.batteryLevel}%",
+                        icon = icon
+                    )
+                }
+
+                // Drone status card
+                DroneStatusCardMap(
+                    droneId = droneId,
+                    telemetry = t,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                )
+            }
+
+            // Map type selector
             MapTypeSelector(
                 currentType = mapType,
                 onTypeSelected = { mapType = it },
@@ -146,39 +174,35 @@ fun DroneMapScreen(navController: NavController, droneId: Long) {
                     .padding(16.dp)
             )
 
-            // Recenter FAB
+            // Recenter button
             FloatingActionButton(
                 onClick = {
-                    drone?.let { recenterCamera(LatLng(it.lat, it.lng), 16f) }
+                    telemetry?.let {
+                        recenterCamera(LatLng(it.latitude, it.longitude), 16f)
+                    }
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                    .padding(16.dp)
             ) {
-                Icon(Icons.Filled.LocationSearching, contentDescription = "Recenter on Drone")
+                Icon(
+                    Icons.Filled.LocationSearching,
+                    contentDescription = "Recenter on Drone"
+                )
             }
 
             // Zoom controls
             CustomZoomControls(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(bottom = 160.dp).width(40.dp),
+                    .padding(bottom = 160.dp)
+                    .width(40.dp),
                 cameraPositionState = cameraPositionState
             )
-
-            // Drone status card (bottom center) with animated battery progress
-            drone?.let {
-                DroneStatusCard(
-                    drone = it,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                )
-            }
         }
     }
 }
+
+
 
 

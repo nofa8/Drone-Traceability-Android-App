@@ -7,7 +7,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 
-fun batteryMarker(batLvl: Int): BitmapDescriptor {
+fun batteryMarker(batLvl: Double): BitmapDescriptor {
     val sizePx = 64
     val bitmap = createBitmap(sizePx, sizePx)
     val canvas = Canvas(bitmap)

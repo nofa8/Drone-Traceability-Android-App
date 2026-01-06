@@ -2,24 +2,38 @@ package dev.epic.dronetraceability.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.epic.dronetraceability.data.model.Drone
 import dev.epic.dronetraceability.data.repository.DroneRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel da Dashboard de drones.
+ *
+ * Responsável por:
+ *  - Expor o estado observado do [DroneRepository] à UI
+ *  - Coordenar o carregamento inicial (REST)
+ *  - Iniciar o fluxo de atualizações em tempo real (WebSocket)
+ *
+ * Este ViewModel:
+ *  - Não contém lógica de negócio
+ *  - Não faz parsing de dados
+ *  - Não conhece detalhes de REST ou WebSocket
+ *
+ * Atua apenas como um *state manager* para Jetpack Compose.
+ */
 
-class DashboardViewModel : ViewModel() {
-    private val repo = DroneRepository()
+class DashboardViewModel(
+    private val repo: DroneRepository
+) : ViewModel() {
 
-    private val _drones = MutableStateFlow<List<Drone>>(emptyList())
-    val drones: StateFlow<List<Drone>> = _drones
+    val drones = repo.drones
+    val isLoading = repo.isLoading
+
+    val error = repo.error
 
     init {
         viewModelScope.launch {
-            repo.getDrones().collect { droneList ->
-                _drones.value = droneList
-            }
+            repo.refresh()
+            repo.startRealtime()
         }
     }
 }
