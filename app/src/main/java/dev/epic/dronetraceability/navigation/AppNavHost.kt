@@ -9,8 +9,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import dev.epic.dronetraceability.ui.dashboard.DashboardScreen
 import dev.epic.dronetraceability.ui.dronedetail.DroneDetailScreen
+import dev.epic.dronetraceability.ui.history.DroneHistoryScreen
 import dev.epic.dronetraceability.ui.map.DroneMapScreen
-
+@kotlin.time.ExperimentalTime
 @Composable
 fun AppNavHost(navController: NavHostController) {
     NavHost(
@@ -36,6 +37,14 @@ fun AppNavHost(navController: NavHostController) {
             DroneMapScreen(navController, droneId)
         }
 
+
+        composable(
+            route = "droneHistory/{droneId}",
+            arguments = listOf(navArgument("droneId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val droneId = backStackEntry.arguments?.getString("droneId") ?: ""
+            DroneHistoryScreen(navController, droneId)
+        }
 
 
     }

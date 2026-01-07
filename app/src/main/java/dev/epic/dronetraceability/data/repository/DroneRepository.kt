@@ -1,6 +1,7 @@
 package dev.epic.dronetraceability.data.repository
 
 import dev.epic.dronetraceability.data.model.domain.Drone
+import dev.epic.dronetraceability.data.model.domain.Telemetry
 import kotlinx.coroutines.flow.StateFlow
 
 /**

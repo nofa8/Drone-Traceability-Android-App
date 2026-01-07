@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,6 +42,7 @@ fun DroneDetails(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ){
 
@@ -156,6 +159,18 @@ fun DroneDetails(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("View Map", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        }
+
+        /* --- BOTÃO HISTÓRICO --- */
+        Spacer(Modifier.height(8.dp))
+        Button(
+            onClick = { navController.navigate(DroneScreen.History.createRoute(drone.droneId)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "View History",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
         }
     }
 }

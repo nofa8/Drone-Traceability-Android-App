@@ -36,4 +36,9 @@ sealed class DroneScreen(val route: String) {
     object Map : DroneScreen("droneMap/{droneId}") {
         fun createRoute(droneId: String) = "droneMap/$droneId"
     }
+
+    object History : DroneScreen("droneHistory/{droneId}") {
+        fun createRoute(droneId: String) = "droneHistory/$droneId"
+    }
+
 }

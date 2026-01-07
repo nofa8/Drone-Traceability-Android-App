@@ -29,9 +29,7 @@ fun DroneDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        drone?.model ?: "Drone $droneId"
-                    )
+                    Text("Drone Details")
                 },
                 navigationIcon = {
                     IconButton(onClick = navController::popBackStack) {

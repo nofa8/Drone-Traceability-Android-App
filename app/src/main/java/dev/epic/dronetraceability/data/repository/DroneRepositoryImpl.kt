@@ -1,6 +1,7 @@
 package dev.epic.dronetraceability.data.repository
 
 import dev.epic.dronetraceability.data.model.domain.Drone
+import dev.epic.dronetraceability.data.model.domain.Telemetry
 import dev.epic.dronetraceability.data.remote.DroneApi
 import dev.epic.dronetraceability.data.remote.DroneWebSocketClient
 import dev.epic.dronetraceability.data.model.dtos_ws.*
