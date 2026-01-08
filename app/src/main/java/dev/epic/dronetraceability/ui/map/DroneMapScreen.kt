@@ -36,7 +36,6 @@ import dev.epic.dronetraceability.ui.components.DroneStatusCardMap
 import dev.epic.dronetraceability.ui.components.MapTypeSelector
 import dev.epic.dronetraceability.ui.components.batteryMarker
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DroneMapScreen(
@@ -54,14 +53,44 @@ fun DroneMapScreen(
     var userHasMovedCamera by remember { mutableStateOf(false) }
     var mapType by remember { mutableStateOf(MapType.HYBRID) }
 
-    val defaultLocation = remember { LatLng(39.93326, -8.89305) }
+    if(telemetry == null)
+        return CircularProgressIndicator()
+
+    val defaultLocation = remember { LatLng(telemetry!!.latitude, telemetry!!.longitude) }
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(defaultLocation, 14f)
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 17f)
     }
 
     var mapLoaded by remember { mutableStateOf(false) }
 
-    // Auto-center
+    // Lista de posições do rastro do drone (últimos 150 pontos)
+    val pathPoints = remember { mutableStateListOf<LatLng>() }
+
+    // Inicializa o rastro com a primeira posição do drone
+    LaunchedEffect(telemetry) {
+        telemetry?.let {
+            val pos = LatLng(it.latitude, it.longitude)
+            if (pathPoints.isEmpty()) {
+                pathPoints.add(pos)
+            }
+        }
+    }
+
+    // Adiciona pontos ao rastro a cada 5 segundos
+    LaunchedEffect(telemetry) {
+        while (true) {
+            telemetry?.let {
+                val pos = LatLng(it.latitude, it.longitude)
+                if (pathPoints.lastOrNull() != pos) {
+                    pathPoints.add(pos)
+                    if (pathPoints.size > 150) pathPoints.removeAt(0)
+                }
+            }
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+
+    // Auto-center do drone
     LaunchedEffect(telemetry, mapLoaded) {
         if (!mapLoaded || userHasMovedCamera) return@LaunchedEffect
         telemetry?.let {
@@ -72,7 +101,7 @@ fun DroneMapScreen(
         }
     }
 
-    // Detect user gesture
+    // Detecta gesture do utilizador
     LaunchedEffect(Unit) {
         snapshotFlow { cameraPositionState.isMoving }
             .collect { moving ->
@@ -116,6 +145,7 @@ fun DroneMapScreen(
                 .fillMaxSize()
         ) {
 
+            // Mensagens de erro ou loading
             when {
                 error != null -> {
                     Text(
@@ -147,12 +177,22 @@ fun DroneMapScreen(
                     val dronePos = LatLng(t.latitude, t.longitude)
                     val icon = remember(t.batteryLevel) { batteryMarker(t.batteryLevel) }
 
+                    // Marker atual do drone
                     Marker(
                         state = rememberUpdatedMarkerState(position = dronePos),
                         title = "Drone $droneId",
                         snippet = "Altitude: ${"%.1f".format(t.altitude)} m • Battery: ${t.batteryLevel}%",
                         icon = icon
                     )
+
+                    // Polyline mostrando o rastro
+                    if (pathPoints.size > 1) {
+                        Polyline(
+                            points = pathPoints.toList(), // converte para List
+                            color = androidx.compose.ui.graphics.Color.Blue,
+                            width = 15f
+                        )
+                    }
                 }
 
                 // Drone status card
@@ -202,6 +242,9 @@ fun DroneMapScreen(
         }
     }
 }
+
+
+
 
 
 

@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.play.services.maps)
     implementation(libs.compose.material)
+    implementation(libs.androidx.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -86,6 +87,15 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.maps.compose.utils)
+
+    // POV DRONE RTSP
+
+    // Core Media3
+    implementation("androidx.media3:media3-exoplayer:1.9.0")
+    implementation("androidx.media3:media3-ui:1.9.0")
+
+    // HLS
+    implementation("androidx.media3:media3-exoplayer-hls:1.9.0")
 
     // For Json to Kotlin obj
 

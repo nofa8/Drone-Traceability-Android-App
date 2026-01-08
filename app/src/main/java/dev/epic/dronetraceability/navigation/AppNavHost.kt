@@ -7,10 +7,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import dev.epic.dronetraceability.ui.commands.DroneCommandScreen
 import dev.epic.dronetraceability.ui.dashboard.DashboardScreen
 import dev.epic.dronetraceability.ui.dronedetail.DroneDetailScreen
 import dev.epic.dronetraceability.ui.history.DroneHistoryScreen
 import dev.epic.dronetraceability.ui.map.DroneMapScreen
+import dev.epic.dronetraceability.ui.pov.DronePovScreen
+@androidx.media3.common.util.UnstableApi
 @kotlin.time.ExperimentalTime
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -44,6 +47,22 @@ fun AppNavHost(navController: NavHostController) {
         ) { backStackEntry ->
             val droneId = backStackEntry.arguments?.getString("droneId") ?: ""
             DroneHistoryScreen(navController, droneId)
+        }
+
+        composable(
+            route = "dronePov/{model}",
+            arguments = listOf(navArgument("model") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val model = backStackEntry.arguments?.getString("model") ?: ""
+            DronePovScreen(navController, model)
+        }
+
+        composable(
+            route = "droneCommand/{droneId}",
+            arguments = listOf(navArgument("droneId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val droneId = backStackEntry.arguments?.getString("droneId") ?: ""
+            DroneCommandScreen(navController, droneId)
         }
 
 

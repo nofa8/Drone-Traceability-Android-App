@@ -1,7 +1,6 @@
 package dev.epic.dronetraceability.data.repository
 
 import dev.epic.dronetraceability.data.model.domain.Drone
-import dev.epic.dronetraceability.data.model.domain.Telemetry
 import dev.epic.dronetraceability.data.remote.DroneApi
 import dev.epic.dronetraceability.data.remote.DroneWebSocketClient
 import dev.epic.dronetraceability.data.model.dtos_ws.*
@@ -11,6 +10,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.*
 
 class DroneRepositoryImpl(
     private val api: DroneApi,
@@ -111,5 +112,61 @@ class DroneRepositoryImpl(
             val drone = current[event.payload] ?: return@update current
             current + (drone.droneId to drone.copy(isConnected = false))
         }
+    }
+
+    override fun sendFlightCommand(droneId: String, command: String) {
+        sendCommand(droneId, "FlightCommand", mapOf("command" to command))
+    }
+
+    override  fun sendUtilityCommand(droneId: String, command: String, state: Boolean) {
+        sendCommand(droneId, "UtilityCommand", mapOf("command" to command, "state" to state))
+    }
+
+    override fun sendStartMissionCommand(
+        droneId: String,
+        startAction: String,
+        endAction: String,
+        repeat: Int,
+        altitude: Double
+    ) {
+        sendCommand(
+            droneId,
+            "StartMissionCommand",
+            mapOf(
+                "command" to "startMission",
+                "startAction" to startAction,
+                "endAction" to endAction,
+                "repeat" to repeat,
+                "altitude" to altitude,
+                "path" to emptyList<Map<String, Double>>(),
+                "status" to "RUNNING"
+            )
+        )
+    }
+
+
+    private fun sendCommand(droneId: String, role: String, payload: Map<String, Any?>) {
+        // Converte o Map<String, Any?> para JsonObject
+        val messageElement = buildJsonObject {
+            payload.forEach { (key, value) ->
+                when (value) {
+                    is String -> put(key, value)
+                    is Boolean -> put(key, value)
+                    is Number -> put(key, value)
+                    is Map<*, *> -> put(key, JsonObject((value as Map<String, Any?>).mapValues {
+                        JsonPrimitive(it.value.toString())
+                    }))
+                    else -> put(key, value.toString())
+                }
+            }
+        }
+
+        val envelope = buildJsonObject {
+            put("userId", droneId)
+            put("role", role)
+            put("message", messageElement)
+        }
+
+        wsClient.send(envelope.toString())
     }
 }

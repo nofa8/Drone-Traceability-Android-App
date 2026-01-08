@@ -152,13 +152,37 @@ fun DroneDetails(
                 .height(90.dp)
         )
 
-        /* --- BOTÃO --- */
+        /* --- BOTÃO MAPA --- */
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = { navController.navigate(DroneScreen.Map.createRoute(drone.droneId)) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("View Map", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        }
+
+        /* --- BOTÃO COMANDOS --- */
+        Spacer(Modifier.height(8.dp))
+        Button(
+            onClick = { navController.navigate(DroneScreen.Commands.createRoute(drone.droneId)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "View Commands",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+
+        /* --- BOTÃO POV --- */
+        Spacer(Modifier.height(8.dp))
+        Button(
+            onClick = { navController.navigate(DroneScreen.Pov.createRoute(drone.model)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "View POV",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
         }
 
         /* --- BOTÃO HISTÓRICO --- */
@@ -172,6 +196,7 @@ fun DroneDetails(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
         }
+
     }
 }
 

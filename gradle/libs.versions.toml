@@ -30,6 +30,7 @@ socketIoClient = "2.1.2"
 uiToolingPreview = "1.9.3"
 playServicesMaps = "19.2.0"
 composeMaterial = "1.5.3"
+material3 = "1.4.0"
 
 [libraries]
 androidx-activity-compose-v192 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -70,6 +71,7 @@ play-services-maps-v1900 = { module = "com.google.android.gms:play-services-maps
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 socket-io-client = { module = "io.socket:socket.io-client", version.ref = "socketIoClient" }
 compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

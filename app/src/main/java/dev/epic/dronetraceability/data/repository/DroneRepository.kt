@@ -30,4 +30,15 @@ interface DroneRepository {
     val error: StateFlow<String?>
     suspend fun refresh()
     fun startRealtime()
+
+    // ---------------- Comandos ----------------
+    fun sendFlightCommand(droneId: String, command: String)
+    fun sendUtilityCommand(droneId: String, command: String, state: Boolean)
+    fun sendStartMissionCommand(
+        droneId: String,
+        startAction: String = "takeoff",
+        endAction: String = "land",
+        repeat: Int = 0,
+        altitude: Double = 50.0
+    )
 }
